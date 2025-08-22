@@ -1,0 +1,664 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🎵 Compuzetta Radio - Radio Cristiana</title>
+    <meta name="description" content="Radio Cristiana 24/7 - Música, Reflexiones y Testimonios">
+    
+    <!-- PWA Support -->
+    <link rel="manifest" href="manifest.json">
+    <meta name="theme-color" content="#2E8B57">
+    <link rel="apple-touch-icon" href="images/logo.png">
+    
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+        
+        .background-animation {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: -1;
+            background: 
+                radial-gradient(circle at 20% 80%, rgba(120, 119, 198, 0.3) 0%, transparent 50%),
+                radial-gradient(circle at 80% 20%, rgba(255, 119, 198, 0.3) 0%, transparent 50%),
+                radial-gradient(circle at 40% 40%, rgba(120, 219, 255, 0.3) 0%, transparent 50%);
+            animation: float 20s ease-in-out infinite;
+        }
+        
+        @keyframes float {
+            0%, 100% { transform: translateY(0px) rotate(0deg); }
+            33% { transform: translateY(-20px) rotate(1deg); }
+            66% { transform: translateY(20px) rotate(-1deg); }
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            position: relative;
+            z-index: 1;
+        }
+        
+        .header {
+            text-align: center;
+            margin-bottom: 2rem;
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            border-radius: 20px;
+            padding: 2rem;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+        
+        .logo {
+            width: 100px;
+            height: 100px;
+            border-radius: 50%;
+            margin: 0 auto 1rem;
+            background: linear-gradient(45deg, #2E8B57, #32CD32);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 2rem;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+        }
+        
+        .title {
+            font-size: 2.5rem;
+            font-weight: bold;
+            margin-bottom: 0.5rem;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+        }
+        
+        .subtitle {
+            font-size: 1.2rem;
+            opacity: 0.9;
+            margin-bottom: 1rem;
+        }
+        
+        .status {
+            display: inline-flex;
+            align-items: center;
+            gap: 10px;
+            background: rgba(46, 139, 87, 0.8);
+            padding: 8px 16px;
+            border-radius: 50px;
+            font-weight: bold;
+        }
+        
+        .status-dot {
+            width: 10px;
+            height: 10px;
+            background: #32CD32;
+            border-radius: 50%;
+            animation: pulse 2s infinite;
+        }
+        
+        @keyframes pulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.2); }
+        }
+        
+        .main-content {
+            display: grid;
+            grid-template-columns: 1fr 300px;
+            gap: 2rem;
+            margin-bottom: 2rem;
+        }
+        
+        @media (max-width: 768px) {
+            .main-content {
+                grid-template-columns: 1fr;
+            }
+        }
+        
+        .player-section {
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            border-radius: 20px;
+            padding: 2rem;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+        
+        .now-playing {
+            text-align: center;
+            margin-bottom: 2rem;
+        }
+        
+        .song-info {
+            background: rgba(0, 0, 0, 0.2);
+            border-radius: 15px;
+            padding: 1.5rem;
+            margin-bottom: 1rem;
+        }
+        
+        .song-title {
+            font-size: 1.3rem;
+            font-weight: bold;
+            margin-bottom: 0.5rem;
+        }
+        
+        .song-artist {
+            font-size: 1rem;
+            opacity: 0.8;
+        }
+        
+        .player-controls {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 1rem;
+            margin-bottom: 1rem;
+        }
+        
+        .play-btn {
+            width: 80px;
+            height: 80px;
+            border-radius: 50%;
+            background: linear-gradient(45deg, #2E8B57, #32CD32);
+            border: none;
+            color: white;
+            font-size: 2rem;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.3s ease;
+            box-shadow: 0 5px 20px rgba(0,0,0,0.3);
+        }
+        
+        .play-btn:hover {
+            transform: scale(1.1);
+            box-shadow: 0 8px 25px rgba(0,0,0,0.4);
+        }
+        
+        .volume-control {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .volume-slider {
+            width: 100px;
+            height: 6px;
+            border-radius: 3px;
+            background: rgba(255, 255, 255, 0.3);
+            outline: none;
+            cursor: pointer;
+        }
+        
+        .sidebar {
+            display: flex;
+            flex-direction: column;
+            gap: 1.5rem;
+        }
+        
+        .widget {
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            border-radius: 15px;
+            padding: 1.5rem;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+        
+        .widget-title {
+            font-size: 1.2rem;
+            font-weight: bold;
+            margin-bottom: 1rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        
+        .schedule-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0.5rem 0;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        
+        .schedule-item:last-child {
+            border-bottom: none;
+        }
+        
+        .schedule-time {
+            font-weight: bold;
+            color: #32CD32;
+        }
+        
+        .chat-messages {
+            height: 200px;
+            overflow-y: auto;
+            background: rgba(0, 0, 0, 0.2);
+            border-radius: 10px;
+            padding: 1rem;
+            margin-bottom: 1rem;
+        }
+        
+        .chat-message {
+            margin-bottom: 0.5rem;
+            padding: 0.5rem;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 8px;
+            font-size: 0.9rem;
+        }
+        
+        .chat-user {
+            font-weight: bold;
+            color: #32CD32;
+        }
+        
+        .footer {
+            text-align: center;
+            padding: 2rem;
+            background: rgba(0, 0, 0, 0.2);
+            border-radius: 15px;
+            margin-top: 2rem;
+        }
+        
+        .access-links {
+            display: flex;
+            justify-content: center;
+            gap: 1rem;
+            margin-top: 1rem;
+        }
+        
+        .access-link {
+            padding: 0.5rem 1rem;
+            background: rgba(255, 255, 255, 0.2);
+            border-radius: 25px;
+            text-decoration: none;
+            color: white;
+            transition: all 0.3s ease;
+            border: 1px solid rgba(255, 255, 255, 0.3);
+        }
+        
+        .access-link:hover {
+            background: rgba(255, 255, 255, 0.3);
+            transform: translateY(-2px);
+        }
+        
+        .stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 1rem;
+            margin-top: 2rem;
+        }
+        
+        .stat-item {
+            text-align: center;
+            background: rgba(255, 255, 255, 0.1);
+            padding: 1rem;
+            border-radius: 10px;
+        }
+        
+        .stat-number {
+            font-size: 1.5rem;
+            font-weight: bold;
+            color: #32CD32;
+        }
+        
+        .stat-label {
+            font-size: 0.9rem;
+            opacity: 0.8;
+        }
+    </style>
+</head>
+<body>
+    <div class="background-animation"></div>
+    
+    <div class="container">
+        <!-- Header -->
+        <header class="header">
+            <div class="logo">🎵</div>
+            <h1 class="title">Compuzetta Radio</h1>
+            <p class="subtitle">Radio Cristiana 24/7 - Música que transforma corazones</p>
+            <div class="status">
+                <div class="status-dot"></div>
+                <span id="status-text">EN VIVO</span>
+            </div>
+        </header>
+
+        <!-- Main Content -->
+        <div class="main-content">
+            <!-- Player Section -->
+            <div class="player-section">
+                <div class="now-playing">
+                    <h3>🎵 Ahora Suena</h3>
+                    <div class="song-info">
+                        <div class="song-title" id="song-title">Cargando...</div>
+                        <div class="song-artist" id="song-artist">Preparando transmisión...</div>
+                    </div>
+                </div>
+
+                <div class="player-controls">
+                    <button class="play-btn" id="play-btn">▶️</button>
+                </div>
+
+                <div class="volume-control">
+                    <span>🔊</span>
+                    <input type="range" class="volume-slider" id="volume-slider" min="0" max="100" value="50">
+                    <span id="volume-value">50%</span>
+                </div>
+
+                <!-- Audio Element -->
+                <audio id="radio-stream" preload="none">
+                    Su navegador no soporta la reproducción de audio.
+                </audio>
+            </div>
+
+            <!-- Sidebar -->
+            <div class="sidebar">
+                <!-- Schedule Widget -->
+                <div class="widget">
+                    <h3 class="widget-title">📅 Programación Hoy</h3>
+                    <div id="schedule-list">
+                        <div class="schedule-item">
+                            <span class="schedule-time">06:00</span>
+                            <span>Música Variada</span>
+                        </div>
+                        <div class="schedule-item">
+                            <span class="schedule-time">09:00</span>
+                            <span>Reflexiones</span>
+                        </div>
+                        <div class="schedule-item">
+                            <span class="schedule-time">12:00</span>
+                            <span>🇵🇪 Himno Nacional</span>
+                        </div>
+                        <div class="schedule-item">
+                            <span class="schedule-time">15:00</span>
+                            <span>Música de Adoración</span>
+                        </div>
+                        <div class="schedule-item">
+                            <span class="schedule-time">18:00</span>
+                            <span>Testimoniales</span>
+                        </div>
+                        <div class="schedule-item">
+                            <span class="schedule-time">21:00</span>
+                            <span>Música Variada</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Chat Widget -->
+                <div class="widget">
+                    <h3 class="widget-title">💬 Chat de Oyentes</h3>
+                    <div class="chat-messages" id="chat-messages">
+                        <div class="chat-message">
+                            <span class="chat-user">👤 Oyente1:</span>
+                            ¡Bendiciones! Hermosa música
+                        </div>
+                        <div class="chat-message">
+                            <span class="chat-user">👤 Maria:</span>
+                            Gracias por esta radio cristiana 🙏
+                        </div>
+                        <div class="chat-message">
+                            <span class="chat-user">👤 Juan:</span>
+                            Saludos desde Lima ❤️
+                        </div>
+                    </div>
+                    <p style="font-size: 0.9rem; opacity: 0.7; text-align: center;">
+                        💬 Solo lectura para oyentes
+                    </p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Stats -->
+        <div class="stats">
+            <div class="stat-item">
+                <div class="stat-number" id="listeners-count">1</div>
+                <div class="stat-label">Oyentes Conectados</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-number" id="uptime">24/7</div>
+                <div class="stat-label">Tiempo Al Aire</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-number">🇵🇪</div>
+                <div class="stat-label">Desde Perú</div>
+            </div>
+        </div>
+
+        <!-- Footer -->
+        <footer class="footer">
+            <p>🎵 <strong>Compuzetta Radio</strong> - Radio Cristiana 24/7</p>
+            <p style="opacity: 0.8;">Música que transforma corazones y eleva el espíritu</p>
+            
+            <div class="access-links">
+                <a href="dj.html" class="access-link">🎧 Panel DJ</a>
+                <a href="admin.html" class="access-link">👑 Panel Admin</a>
+            </div>
+            
+            <p style="margin-top: 1rem; font-size: 0.9rem; opacity: 0.7;">
+                © 2025 Compuzetta Radio - Hecho con ❤️ para la gloria de Dios
+            </p>
+        </footer>
+    </div>
+
+    <script>
+        // Estado global de la radio
+        const RadioState = {
+            isPlaying: false,
+            currentSong: {
+                title: "Iniciando transmisión...",
+                artist: "Compuzetta Radio"
+            },
+            volume: 50,
+            listeners: 1,
+            schedule: []
+        };
+
+        // Elementos del DOM
+        const playBtn = document.getElementById('play-btn');
+        const audioElement = document.getElementById('radio-stream');
+        const volumeSlider = document.getElementById('volume-slider');
+        const volumeValue = document.getElementById('volume-value');
+        const songTitle = document.getElementById('song-title');
+        const songArtist = document.getElementById('song-artist');
+        const listenersCount = document.getElementById('listeners-count');
+        const chatMessages = document.getElementById('chat-messages');
+
+        // Inicialización
+        document.addEventListener('DOMContentLoaded', function() {
+            setupAudioPlayer();
+            updateNowPlaying();
+            startChatSimulation();
+            startStatsUpdate();
+            updateSchedule();
+        });
+
+        // Configurar reproductor de audio
+        function setupAudioPlayer() {
+            // Configurar controles
+            playBtn.addEventListener('click', togglePlayback);
+            volumeSlider.addEventListener('input', updateVolume);
+            
+            // Eventos del audio
+            audioElement.addEventListener('loadstart', () => {
+                console.log('Cargando stream...');
+            });
+            
+            audioElement.addEventListener('canplay', () => {
+                console.log('Stream listo para reproducir');
+            });
+            
+            audioElement.addEventListener('error', (e) => {
+                console.error('Error en stream:', e);
+                updatePlayButton(false);
+            });
+        }
+
+        // Toggle reproducción
+        function togglePlayback() {
+            if (RadioState.isPlaying) {
+                stopRadio();
+            } else {
+                startRadio();
+            }
+        }
+
+        // Iniciar radio
+        function startRadio() {
+            // En un entorno real, aquí iría la URL del stream
+            // audioElement.src = 'https://your-stream-url.com/live';
+            
+            // Simulación para demo
+            simulateRadioStart();
+            RadioState.isPlaying = true;
+            updatePlayButton(true);
+        }
+
+        // Detener radio
+        function stopRadio() {
+            audioElement.pause();
+            audioElement.src = '';
+            RadioState.isPlaying = false;
+            updatePlayButton(false);
+        }
+
+        // Simular inicio de radio (para demo)
+        function simulateRadioStart() {
+            // Simular diferentes canciones
+            const songs = [
+                { title: "Sublime Gracia", artist: "Coro Cristiano" },
+                { title: "Cuán Grande Es Él", artist: "Himnario" },
+                { title: "Jesús Es El Señor", artist: "Música Cristiana" },
+                { title: "Dios Está Aquí", artist: "Adoración" },
+                { title: "Te Alabaré", artist: "Canto Congregacional" }
+            ];
+            
+            let currentIndex = 0;
+            setInterval(() => {
+                if (RadioState.isPlaying) {
+                    RadioState.currentSong = songs[currentIndex];
+                    updateNowPlaying();
+                    currentIndex = (currentIndex + 1) % songs.length;
+                }
+            }, 30000); // Cambiar cada 30 segundos para demo
+        }
+
+        // Actualizar botón de play
+        function updatePlayButton(playing) {
+            playBtn.innerHTML = playing ? '⏸️' : '▶️';
+            playBtn.style.background = playing ? 
+                'linear-gradient(45deg, #DC143C, #FF6347)' : 
+                'linear-gradient(45deg, #2E8B57, #32CD32)';
+        }
+
+        // Actualizar volumen
+        function updateVolumen() {
+            RadioState.volume = volumeSlider.value;
+            volumeValue.textContent = RadioState.volume + '%';
+            audioElement.volume = RadioState.volume / 100;
+        }
+
+        // Actualizar información de la canción actual
+        function updateNowPlaying() {
+            songTitle.textContent = RadioState.currentSong.title;
+            songArtist.textContent = RadioState.currentSong.artist;
+        }
+
+        // Simular chat en vivo
+        function startChatSimulation() {
+            const chatMessages = [
+                { user: "Ana", message: "Bendiciones familia! 🙏" },
+                { user: "Carlos", message: "Hermosa música, gracias" },
+                { user: "María", message: "Saludos desde Arequipa ❤️" },
+                { user: "Pedro", message: "Dios los bendiga grandemente" },
+                { user: "Rosa", message: "Que tengan un día lleno de bendiciones" },
+                { user: "Luis", message: "Gloria a Dios por esta radio 🙌" }
+            ];
+            
+            let messageIndex = 0;
+            setInterval(() => {
+                if (Math.random() > 0.7) { // 30% probabilidad cada intervalo
+                    const message = chatMessages[messageIndex];
+                    addChatMessage(message.user, message.message);
+                    messageIndex = (messageIndex + 1) % chatMessages.length;
+                }
+            }, 15000); // Cada 15 segundos
+        }
+
+        // Agregar mensaje al chat
+        function addChatMessage(user, message) {
+            const chatContainer = document.getElementById('chat-messages');
+            const messageDiv = document.createElement('div');
+            messageDiv.className = 'chat-message';
+            messageDiv.innerHTML = `<span class="chat-user">👤 ${user}:</span> ${message}`;
+            
+            chatContainer.appendChild(messageDiv);
+            chatContainer.scrollTop = chatContainer.scrollHeight;
+            
+            // Mantener solo los últimos 5 mensajes
+            const messages = chatContainer.querySelectorAll('.chat-message');
+            if (messages.length > 5) {
+                chatContainer.removeChild(messages[0]);
+            }
+        }
+
+        // Actualizar estadísticas
+        function startStatsUpdate() {
+            setInterval(() => {
+                // Simular fluctuación de oyentes
+                const baseListeners = 1;
+                const variation = Math.floor(Math.random() * 3); // 0-2
+                RadioState.listeners = baseListeners + variation;
+                listenersCount.textContent = RadioState.listeners;
+            }, 30000); // Cada 30 segundos
+        }
+
+        // Actualizar programación según la hora
+        function updateSchedule() {
+            const now = new Date();
+            const currentHour = now.getHours();
+            
+            // Resaltar programa actual
+            const scheduleItems = document.querySelectorAll('.schedule-item');
+            scheduleItems.forEach(item => {
+                const timeText = item.querySelector('.schedule-time').textContent;
+                const scheduleHour = parseInt(timeText.split(':')[0]);
+                
+                if (scheduleHour === currentHour) {
+                    item.style.background = 'rgba(50, 205, 50, 0.2)';
+                    item.style.border = '1px solid #32CD32';
+                } else {
+                    item.style.background = 'transparent';
+                    item.style.border = 'none';
+                }
+            });
+        }
+
+        // Actualizar cada minuto
+        setInterval(updateSchedule, 60000);
+
+        // PWA Service Worker Registration
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', function() {
+                navigator.serviceWorker.register('/sw.js')
+                    .then(function(registration) {
+                        console.log('SW registered with scope: ', registration.scope);
+                    })
+                    .catch(function(error) {
+                        console.log('SW registration failed: ', error);
+                    });
+            });
+        }
+    </script>
+</body>
+</html>
