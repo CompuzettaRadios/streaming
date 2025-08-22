@@ -762,6 +762,132 @@ body {
     flex-wrap: wrap;
 }
 
-.system-btn {
+    .system-btn {
     background: var(--gradient-primary);
     border: none;
+    color: white;
+    padding: 1rem 1.5rem;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-weight: bold;
+}
+
+.system-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-light);
+}
+
+.system-btn.danger {
+    background: var(--gradient-live);
+}
+
+.system-btn.danger:hover {
+    background: linear-gradient(135deg, #ff3838 0%, #ff1744 100%);
+}
+
+/* Responsive Design */
+@media (max-width: 1200px) {
+    .dj-main {
+        grid-template-columns: 1fr;
+    }
+    
+    .crossfade-control {
+        grid-template-columns: 1fr;
+        gap: 1rem;
+    }
+    
+    .crossfade-slider {
+        transform: none;
+        width: 100%;
+    }
+    
+    .crossfade-labels {
+        justify-content: space-between;
+        width: 100%;
+    }
+}
+
+@media (max-width: 768px) {
+    .dj-header {
+        flex-direction: column;
+        gap: 1rem;
+        text-align: center;
+    }
+    
+    .header-controls {
+        justify-content: center;
+    }
+    
+    .dj-main {
+        padding: 1rem;
+        gap: 1rem;
+    }
+    
+    .go-live-btn, .stop-live-btn {
+        padding: 1rem 2rem;
+        font-size: 1rem;
+    }
+    
+    .system-buttons {
+        justify-content: center;
+    }
+}
+
+/* Drag and Drop Styles */
+.track-item.dragging {
+    opacity: 0.5;
+    transform: scale(0.95);
+}
+
+.playlist.drag-over {
+    border-color: var(--success-color);
+    background: rgba(46, 213, 115, 0.1);
+}
+
+/* Loading States */
+.loading {
+    opacity: 0.6;
+    pointer-events: none;
+}
+
+.loading::after {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 20px;
+    height: 20px;
+    border: 2px solid transparent;
+    border-top: 2px solid var(--warning-color);
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+    0% { transform: translate(-50%, -50%) rotate(0deg); }
+    100% { transform: translate(-50%, -50%) rotate(360deg); }
+}
+
+/* Scrollbar Styles */
+::-webkit-scrollbar {
+    width: 8px;
+}
+
+::-webkit-scrollbar-track {
+    background: var(--secondary-color);
+    border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb {
+    background: var(--accent-color);
+    border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+    background: var(--gradient-primary);
+}
