@@ -1,0 +1,198 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Panel DJ - Compuzetta Radio</title>
+    <link rel="stylesheet" href="css/dj.css">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+</head>
+<body>
+    <div id="loginOverlay" class="login-overlay">
+        <div class="login-container">
+            <div class="login-header">
+                <i class="fas fa-microphone"></i>
+                <h2>Panel DJ</h2>
+                <p>Compuzetta Radio</p>
+            </div>
+            <form id="loginForm">
+                <input type="password" id="djPassword" placeholder="Contraseña DJ" required>
+                <button type="submit"><i class="fas fa-sign-in-alt"></i> Acceder</button>
+            </form>
+            <div class="login-footer">
+                <a href="index.html"><i class="fas fa-home"></i> Volver a Radio</a>
+            </div>
+        </div>
+    </div>
+
+    <div id="djPanel" class="dj-panel" style="display: none;">
+        <header class="dj-header">
+            <div class="logo">
+                <img src="images/logo.png" alt="Compuzetta Radio">
+                <h1>Panel DJ</h1>
+            </div>
+            <div class="header-controls">
+                <div class="live-status" id="liveStatus">
+                    <i class="fas fa-circle"></i>
+                    <span>FUERA DEL AIRE</span>
+                </div>
+                <button id="logoutBtn" class="logout-btn">
+                    <i class="fas fa-sign-out-alt"></i> Salir
+                </button>
+            </div>
+        </header>
+
+        <main class="dj-main">
+            <div class="broadcast-section">
+                <div class="live-controls">
+                    <button id="goLiveBtn" class="go-live-btn">
+                        <i class="fas fa-microphone"></i>
+                        <span>SALIR AL AIRE</span>
+                    </button>
+                    <button id="stopLiveBtn" class="stop-live-btn" style="display: none;">
+                        <i class="fas fa-stop"></i>
+                        <span>SALIR DEL AIRE</span>
+                    </button>
+                </div>
+                
+                <div class="crossfade-section">
+                    <h3><i class="fas fa-sliders-h"></i> Control de Crossfade</h3>
+                    <div class="crossfade-control">
+                        <div class="deck" id="deckA">
+                            <h4>Deck A</h4>
+                            <div class="deck-info">
+                                <span class="track-name">Ninguna pista</span>
+                                <div class="time-display">00:00 / 00:00</div>
+                            </div>
+                            <div class="deck-controls">
+                                <button class="play-btn"><i class="fas fa-play"></i></button>
+                                <button class="pause-btn"><i class="fas fa-pause"></i></button>
+                                <input type="range" class="volume-slider" min="0" max="100" value="100">
+                            </div>
+                        </div>
+                        
+                        <div class="crossfader">
+                            <input type="range" id="crossfadeSlider" min="0" max="100" value="50" class="crossfade-slider">
+                            <div class="crossfade-labels">
+                                <span>A</span>
+                                <span>B</span>
+                            </div>
+                        </div>
+                        
+                        <div class="deck" id="deckB">
+                            <h4>Deck B</h4>
+                            <div class="deck-info">
+                                <span class="track-name">Ninguna pista</span>
+                                <div class="time-display">00:00 / 00:00</div>
+                            </div>
+                            <div class="deck-controls">
+                                <button class="play-btn"><i class="fas fa-play"></i></button>
+                                <button class="pause-btn"><i class="fas fa-pause"></i></button>
+                                <input type="range" class="volume-slider" min="0" max="100" value="100">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="music-section">
+                <h3><i class="fas fa-music"></i> Selector de Música</h3>
+                <div class="folder-selector">
+                    <select id="folderSelect">
+                        <option value="">Seleccionar carpeta...</option>
+                        <option value="variada">🎵 Música Variada</option>
+                        <option value="jubilo">🎉 Júbilo</option>
+                        <option value="adoracion">🙏 Adoración</option>
+                        <option value="rancheras">🤠 Rancheras</option>
+                        <option value="huaynos">🎺 Huaynos</option>
+                        <option value="actuales">🆕 Actuales</option>
+                        <option value="pistas">🎼 Pistas</option>
+                        <option value="reflexiones">💭 Reflexiones</option>
+                        <option value="testimoniales">🗣️ Testimonios</option>
+                        <option value="jingles">🔊 Jingles</option>
+                    </select>
+                </div>
+                
+                <div class="track-list" id="trackList">
+                    <div class="no-folder-selected">
+                        <i class="fas fa-folder-open"></i>
+                        <p>Selecciona una carpeta para ver las pistas disponibles</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="playlist-section">
+                <h3><i class="fas fa-list"></i> Playlist Temporal</h3>
+                <div class="playlist-controls">
+                    <button id="clearPlaylistBtn"><i class="fas fa-trash"></i> Limpiar</button>
+                    <button id="shufflePlaylistBtn"><i class="fas fa-random"></i> Mezclar</button>
+                </div>
+                <div class="playlist" id="tempPlaylist">
+                    <div class="empty-playlist">
+                        <i class="fas fa-list"></i>
+                        <p>Arrastra pistas aquí para crear tu playlist temporal</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="stats-section">
+                <h3><i class="fas fa-chart-line"></i> Estadísticas</h3>
+                <div class="stats-grid">
+                    <div class="stat-card">
+                        <i class="fas fa-users"></i>
+                        <div class="stat-info">
+                            <span class="stat-number" id="listenerCount">0</span>
+                            <span class="stat-label">Oyentes</span>
+                        </div>
+                    </div>
+                    <div class="stat-card">
+                        <i class="fas fa-clock"></i>
+                        <div class="stat-info">
+                            <span class="stat-number" id="airTime">00:00</span>
+                            <span class="stat-label">Tiempo al aire</span>
+                        </div>
+                    </div>
+                    <div class="stat-card">
+                        <i class="fas fa-music"></i>
+                        <div class="stat-info">
+                            <span class="stat-number" id="tracksPlayed">0</span>
+                            <span class="stat-label">Pistas reproducidas</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="chat-section">
+                <h3><i class="fas fa-comments"></i> Chat con Oyentes</h3>
+                <div class="chat-container">
+                    <div class="chat-messages" id="chatMessages">
+                        <div class="system-message">
+                            <i class="fas fa-info-circle"></i>
+                            <span>Bienvenido al panel DJ. Los mensajes de oyentes aparecerán aquí.</span>
+                        </div>
+                    </div>
+                    <div class="chat-input-container">
+                        <input type="text" id="chatInput" placeholder="Mensaje para los oyentes...">
+                        <button id="sendChatBtn"><i class="fas fa-paper-plane"></i></button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="system-controls">
+                <h3><i class="fas fa-cogs"></i> Controles del Sistema</h3>
+                <div class="system-buttons">
+                    <button id="restartStreamBtn" class="system-btn">
+                        <i class="fas fa-redo"></i> Reiniciar Stream
+                    </button>
+                    <button id="emergencyStopBtn" class="system-btn danger">
+                        <i class="fas fa-exclamation-triangle"></i> Parada de Emergencia
+                    </button>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script src="js/api.js"></script>
+    <script src="js/dj.js"></script>
+</body>
+</html>
