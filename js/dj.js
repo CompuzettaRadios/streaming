@@ -726,5 +726,364 @@ class DJPanel {
             padding: 1rem 1.5rem;
             border-radius: 8px;
             box-shadow: var(--shadow-light);
-            z-index:
-X SE CORTÓ XX
+            z-index: 10000;
+            font-weight: 500;
+            animation: slideIn 0.3s ease-out;
+        `;
+        
+        // Agregar estilos de animación si no existen
+        if (!document.getElementById('notification-styles')) {
+            const styles = document.createElement('style');
+            styles.id = 'notification-styles';
+            styles.textContent = `
+                @keyframes slideIn {
+                    from {
+                        transform: translateX(100%);
+                        opacity: 0;
+                    }
+                    to {
+                        transform: translateX(0);
+                        opacity: 1;
+                    }
+                }
+                
+                @keyframes slideOut {
+                    from {
+                        transform: translateX(0);
+                        opacity: 1;
+                    }
+                    to {
+                        transform: translateX(100%);
+                        opacity: 0;
+                    }
+                }
+            `;
+            document.head.appendChild(styles);
+        }
+        
+        document.body.appendChild(notification);
+        
+        // Auto-remover después de 5 segundos
+        setTimeout(() => {
+            notification.style.animation = 'slideOut 0.3s ease-in';
+            setTimeout(() => {
+                if (notification.parentNode) {
+                    notification.parentNode.removeChild(notification);
+                }
+            }, 300);
+        }, 5000);
+        
+        // Permitir cerrar con click
+        notification.addEventListener('click', () => {
+            notification.style.animation = 'slideOut 0.3s ease-in';
+            setTimeout(() => {
+                if (notification.parentNode) {
+                    notification.parentNode.removeChild(notification);
+                }
+            }, 300);
+        });
+    }
+
+    // Funciones adicionales para manejo de archivos y configuración
+    async loadSystemConfiguration() {
+        try {
+            // Cargar configuración del sistema desde localStorage o API
+            const config = localStorage.getItem('compuzetta_dj_config');
+            if (config) {
+                const parsedConfig = JSON.parse(config);
+                this.applyConfiguration(parsedConfig);
+            }
+        } catch (error) {
+            console.error('Error loading configuration:', error);
+        }
+    }
+
+    applyConfiguration(config) {
+        // Aplicar configuración cargada
+        if (config.crossfadeValue !== undefined) {
+            this.crossfadeValue = config.crossfadeValue;
+            document.getElementById('crossfadeSlider').value = config.crossfadeValue;
+        }
+        
+        if (config.deckVolumes) {
+            if (config.deckVolumes.A !== undefined) {
+                this.deckA.volume = config.deckVolumes.A;
+                document.querySelector('#deckA .volume-slider').value = config.deckVolumes.A;
+            }
+            if (config.deckVolumes.B !== undefined) {
+                this.deckB.volume = config.deckVolumes.B;
+                document.querySelector('#deckB .volume-slider').value = config.deckVolumes.B;
+            }
+        }
+    }
+
+    saveConfiguration() {
+        // Guardar configuración actual
+        const config = {
+            crossfadeValue: this.crossfadeValue,
+            deckVolumes: {
+                A: this.deckA.volume,
+                B: this.deckB.volume
+            },
+            lastPlaylist: this.playlist,
+            timestamp: Date.now()
+        };
+        
+        try {
+            localStorage.setItem('compuzetta_dj_config', JSON.stringify(config));
+        } catch (error) {
+            console.error('Error saving configuration:', error);
+        }
+    }
+
+    // Auto-guardar configuración cada minuto
+    startAutoSave() {
+        setInterval(() => {
+            this.saveConfiguration();
+        }, 60000);
+    }
+
+    // Manejo de eventos de teclado para atajos
+    setupKeyboardShortcuts() {
+        document.addEventListener('keydown', (e) => {
+            // Solo procesar atajos si no estamos escribiendo en un input
+            if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
+            
+            switch(e.key.toLowerCase()) {
+                case ' ': // Spacebar - Play/Pause deck activo
+                    e.preventDefault();
+                    if (this.deckA.playing) {
+                        this.pauseDeck('A');
+                    } else if (this.deckB.playing) {
+                        this.pauseDeck('B');
+                    } else if (this.deckA.audio) {
+                        this.playDeck('A');
+                    } else if (this.deckB.audio) {
+                        this.playDeck('B');
+                    }
+                    break;
+                    
+                case '1': // Número 1 - Play Deck A
+                    if (this.deckA.audio) this.playDeck('A');
+                    break;
+                    
+                case '2': // Número 2 - Play Deck B
+                    if (this.deckB.audio) this.playDeck('B');
+                    break;
+                    
+                case '3': // Número 3 - Pause Deck A
+                    this.pauseDeck('A');
+                    break;
+                    
+                case '4': // Número 4 - Pause Deck B
+                    this.pauseDeck('B');
+                    break;
+                    
+                case 'arrowleft': // Flecha izquierda - Crossfade hacia A
+                    e.preventDefault();
+                    this.crossfadeValue = Math.max(0, this.crossfadeValue - 5);
+                    document.getElementById('crossfadeSlider').value = this.crossfadeValue;
+                    this.updateCrossfade(this.crossfadeValue);
+                    break;
+                    
+                case 'arrowright': // Flecha derecha - Crossfade hacia B
+                    e.preventDefault();
+                    this.crossfadeValue = Math.min(100, this.crossfadeValue + 5);
+                    document.getElementById('crossfadeSlider').value = this.crossfadeValue;
+                    this.updateCrossfade(this.crossfadeValue);
+                    break;
+                    
+                case 'l': // L - Toggle Live
+                    if (this.isLive) {
+                        this.stopLive();
+                    } else {
+                        this.goLive();
+                    }
+                    break;
+            }
+        });
+    }
+
+    // Monitoreo de conexión
+    setupConnectionMonitoring() {
+        let connectionCheckInterval;
+        
+        const checkConnection = async () => {
+            try {
+                // Simular check de conexión con el servidor
+                const isOnline = navigator.onLine;
+                this.updateConnectionStatus(isOnline);
+            } catch (error) {
+                this.updateConnectionStatus(false);
+            }
+        };
+        
+        // Check inicial
+        checkConnection();
+        
+        // Check periódico cada 30 segundos
+        connectionCheckInterval = setInterval(checkConnection, 30000);
+        
+        // Listeners para eventos de conexión
+        window.addEventListener('online', () => this.updateConnectionStatus(true));
+        window.addEventListener('offline', () => this.updateConnectionStatus(false));
+        
+        // Limpiar intervalo al salir
+        window.addEventListener('beforeunload', () => {
+            if (connectionCheckInterval) clearInterval(connectionCheckInterval);
+        });
+    }
+
+    updateConnectionStatus(isOnline) {
+        const statusIndicator = document.querySelector('.connection-status') || this.createConnectionStatusIndicator();
+        
+        if (isOnline) {
+            statusIndicator.className = 'connection-status online';
+            statusIndicator.innerHTML = '<i class="fas fa-wifi"></i> Conectado';
+        } else {
+            statusIndicator.className = 'connection-status offline';
+            statusIndicator.innerHTML = '<i class="fas fa-wifi"></i> Sin conexión';
+            if (this.isLive) {
+                this.showError('Conexión perdida durante transmisión en vivo');
+            }
+        }
+    }
+
+    createConnectionStatusIndicator() {
+        const indicator = document.createElement('div');
+        indicator.className = 'connection-status';
+        indicator.style.cssText = `
+            position: fixed;
+            bottom: 20px;
+            left: 20px;
+            padding: 8px 12px;
+            border-radius: 20px;
+            font-size: 0.8rem;
+            z-index: 1000;
+            transition: all 0.3s ease;
+        `;
+        
+        // Agregar estilos específicos
+        const styles = document.createElement('style');
+        styles.textContent += `
+            .connection-status.online {
+                background: var(--success-color);
+                color: white;
+            }
+            .connection-status.offline {
+                background: var(--danger-color);
+                color: white;
+                animation: pulse 2s infinite;
+            }
+            
+            @keyframes pulse {
+                0%, 100% { opacity: 1; }
+                50% { opacity: 0.7; }
+            }
+        `;
+        
+        if (!document.getElementById('connection-styles')) {
+            styles.id = 'connection-styles';
+            document.head.appendChild(styles);
+        }
+        
+        document.body.appendChild(indicator);
+        return indicator;
+    }
+
+    // Funciones de utilidad adicionales
+    exportPlaylist() {
+        if (this.playlist.length === 0) {
+            this.showError('No hay pistas en la playlist para exportar');
+            return;
+        }
+        
+        const playlistData = {
+            name: `Playlist DJ - ${new Date().toLocaleDateString()}`,
+            created: new Date().toISOString(),
+            tracks: this.playlist
+        };
+        
+        const dataStr = JSON.stringify(playlistData, null, 2);
+        const dataBlob = new Blob([dataStr], {type: 'application/json'});
+        const url = URL.createObjectURL(dataBlob);
+        
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = `compuzetta_playlist_${Date.now()}.json`;
+        link.click();
+        
+        URL.revokeObjectURL(url);
+        this.showSuccess('Playlist exportada exitosamente');
+    }
+
+    importPlaylist(event) {
+        const file = event.target.files[0];
+        if (!file) return;
+        
+        const reader = new FileReader();
+        reader.onload = (e) => {
+            try {
+                const playlistData = JSON.parse(e.target.result);
+                
+                if (playlistData.tracks && Array.isArray(playlistData.tracks)) {
+                    if (confirm(`¿Importar playlist "${playlistData.name || 'Sin nombre'}" con ${playlistData.tracks.length} pistas?`)) {
+                        this.playlist = [...this.playlist, ...playlistData.tracks];
+                        this.renderPlaylist();
+                        this.showSuccess(`Playlist importada: ${playlistData.tracks.length} pistas añadidas`);
+                    }
+                } else {
+                    this.showError('Formato de playlist inválido');
+                }
+            } catch (error) {
+                this.showError('Error al leer el archivo de playlist');
+            }
+        };
+        
+        reader.readAsText(file);
+    }
+
+    // Función de inicialización completa
+    initializeCompleteSystem() {
+        // Cargar configuración guardada
+        this.loadSystemConfiguration();
+        
+        // Configurar auto-guardado
+        this.startAutoSave();
+        
+        // Configurar atajos de teclado
+        this.setupKeyboardShortcuts();
+        
+        // Configurar monitoreo de conexión
+        this.setupConnectionMonitoring();
+        
+        // Mostrar mensaje de bienvenida
+        setTimeout(() => {
+            this.showSuccess('Panel DJ inicializado correctamente');
+        }, 1000);
+    }
+}
+
+// Inicializar el panel DJ cuando se carga la página
+let djPanel;
+document.addEventListener('DOMContentLoaded', () => {
+    djPanel = new DJPanel();
+    djPanel.initializeCompleteSystem();
+});
+
+// Manejar cierre de ventana/pestaña
+window.addEventListener('beforeunload', (e) => {
+    if (djPanel && djPanel.isLive) {
+        e.preventDefault();
+        e.returnValue = '¿Estás seguro de salir mientras estás transmitiendo en vivo?';
+        return e.returnValue;
+    }
+    
+    // Guardar configuración antes de salir
+    if (djPanel) {
+        djPanel.saveConfiguration();
+    }
+});
+
+// Exportar para uso global
+window.djPanel = djPanel;
