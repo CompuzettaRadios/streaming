@@ -5,6 +5,7 @@ class CompuzettaAdmin {
     constructor() {
         this.isAuthenticated = false;
         this.currentUser = null;
+        this.sessionData = null; // Reemplaza localStorage
         this.systemStatus = {
             online: false,
             uptime: 0,
@@ -30,18 +31,13 @@ class CompuzettaAdmin {
 
     // ========== AUTENTICACIÓN ==========
     checkAuthentication() {
-        const savedAuth = localStorage.getItem('admin_auth');
-        if (savedAuth) {
-            try {
-                const authData = JSON.parse(savedAuth);
-                if (Date.now() - authData.timestamp < 8 * 60 * 60 * 1000) { // 8 horas
-                    this.isAuthenticated = true;
-                    this.currentUser = authData.user;
-                    this.showAdminPanel();
-                    return;
-                }
-            } catch (e) {
-                localStorage.removeItem('admin_auth');
+        // En lugar de localStorage, usar variable en memoria
+        if (this.sessionData && this.sessionData.timestamp) {
+            if (Date.now() - this.sessionData.timestamp < 8 * 60 * 60 * 1000) { // 8 horas
+                this.isAuthenticated = true;
+                this.currentUser = this.sessionData.user;
+                this.showAdminPanel();
+                return;
             }
         }
         this.showLoginOverlay();
@@ -79,14 +75,11 @@ class CompuzettaAdmin {
             this.isAuthenticated = true;
             this.currentUser = validPasswords[password];
             
-            try {
-                localStorage.setItem('admin_auth', JSON.stringify({
-                    user: this.currentUser,
-                    timestamp: Date.now()
-                }));
-            } catch (e) {
-                console.warn('No se pudo guardar la sesión');
-            }
+            // Guardar en variable en memoria en lugar de localStorage
+            this.sessionData = {
+                user: this.currentUser,
+                timestamp: Date.now()
+            };
             
             this.showAdminPanel();
             this.addLog('success', 'Administrador autenticado correctamente');
@@ -98,11 +91,8 @@ class CompuzettaAdmin {
     }
 
     logout() {
-        try {
-            localStorage.removeItem('admin_auth');
-        } catch (e) {
-            console.warn('No se pudo limpiar la sesión');
-        }
+        // Limpiar variable en memoria en lugar de localStorage
+        this.sessionData = null;
         this.isAuthenticated = false;
         this.currentUser = null;
         this.showLoginOverlay();
@@ -835,7 +825,8 @@ function saveScheduleItem() {
 function saveSchedule() {
     if (admin) {
         admin.addLog('success', 'Configuración de programación guardada');
-    admin.showSuccess('Programación guardada correctamente');
+        admin.showSuccess('Programación guardada correctamente');
+    }
 }
 
 function resetSchedule() {
