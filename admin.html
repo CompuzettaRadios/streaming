@@ -1,0 +1,399 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Panel - Compuzetta Radio</title>
+    <link rel="stylesheet" href="css/admin.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <link rel="icon" type="image/png" href="images/logo.png">
+</head>
+<body>
+    <!-- Login Overlay -->
+    <div class="login-overlay" id="loginOverlay">
+        <div class="login-container">
+            <div class="login-header">
+                <i class="fas fa-shield-alt"></i>
+                <h2>Panel de Administración</h2>
+                <p>Acceso restringido - Solo administradores</p>
+            </div>
+            <form id="loginForm">
+                <input type="password" id="passwordInput" placeholder="Contraseña de administrador" required>
+                <button type="submit">
+                    <i class="fas fa-sign-in-alt"></i>
+                    Acceder
+                </button>
+            </form>
+            <div class="login-footer">
+                <a href="index.html"><i class="fas fa-home"></i> Volver a Radio</a>
+                <span> | </span>
+                <a href="dj.html"><i class="fas fa-headphones"></i> Panel DJ</a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Admin Panel -->
+    <div class="admin-panel" id="adminPanel" style="display: none;">
+        <!-- Header -->
+        <header class="admin-header">
+            <div class="logo">
+                <img src="images/logo.png" alt="Compuzetta Radio">
+                <div>
+                    <h1>Compuzetta Radio</h1>
+                    <span class="admin-badge">ADMINISTRADOR</span>
+                </div>
+            </div>
+            <div class="header-controls">
+                <div class="system-status">
+                    <span class="status-dot online" id="systemStatus"></span>
+                    <span id="systemStatusText">Sistema Online</span>
+                </div>
+                <button class="logout-btn" onclick="logout()">
+                    <i class="fas fa-sign-out-alt"></i>
+                    Salir
+                </button>
+            </div>
+        </header>
+
+        <!-- Main Content -->
+        <main class="admin-main">
+            <!-- Dashboard Overview -->
+            <section class="dashboard-section">
+                <h3><i class="fas fa-tachometer-alt"></i> Dashboard</h3>
+                <div class="dashboard-grid">
+                    <div class="dashboard-card">
+                        <div class="card-icon">
+                            <i class="fas fa-users"></i>
+                        </div>
+                        <div class="card-info">
+                            <div class="card-number" id="totalListeners">0</div>
+                            <div class="card-label">Oyentes Activos</div>
+                        </div>
+                    </div>
+                    <div class="dashboard-card">
+                        <div class="card-icon">
+                            <i class="fas fa-music"></i>
+                        </div>
+                        <div class="card-info">
+                            <div class="card-number" id="totalTracks">0</div>
+                            <div class="card-label">Pistas Total</div>
+                        </div>
+                    </div>
+                    <div class="dashboard-card">
+                        <div class="card-icon">
+                            <i class="fas fa-clock"></i>
+                        </div>
+                        <div class="card-info">
+                            <div class="card-number" id="uptime">00:00:00</div>
+                            <div class="card-label">Tiempo Aire</div>
+                        </div>
+                    </div>
+                    <div class="dashboard-card">
+                        <div class="card-icon">
+                            <i class="fas fa-microphone"></i>
+                        </div>
+                        <div class="card-info">
+                            <div class="card-number" id="djStatus">Offline</div>
+                            <div class="card-label">Estado DJ</div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- File Management -->
+            <section class="file-management-section">
+                <h3><i class="fas fa-folder-open"></i> Gestión de Archivos</h3>
+                <div class="file-manager">
+                    <div class="upload-area">
+                        <h4><i class="fas fa-cloud-upload-alt"></i> Subir Archivos</h4>
+                        <div class="folder-selector">
+                            <label for="uploadFolder">Carpeta destino:</label>
+                            <select id="uploadFolder">
+                                <option value="">Seleccionar carpeta...</option>
+                                <option value="himno_nacional">🇵🇪 Himno Nacional</option>
+                                <option value="variada">🎵 Música Variada</option>
+                                <option value="jubilo">🎉 Júbilo</option>
+                                <option value="adoracion">🙏 Adoración</option>
+                                <option value="rancheras">🤠 Rancheras</option>
+                                <option value="huaynos">🎺 Huaynos</option>
+                                <option value="actuales">🆕 Actuales</option>
+                                <option value="pistas">🎼 Pistas</option>
+                                <option value="reflexiones">💭 Reflexiones</option>
+                                <option value="testimoniales">🗣️ Testimoniales</option>
+                                <option value="locucion_horas">⏰ Locución Horas</option>
+                                <option value="publicidad">📢 Publicidad</option>
+                                <option value="jingles">🔊 Jingles</option>
+                            </select>
+                        </div>
+                        <div class="drop-zone" id="dropZone">
+                            <i class="fas fa-cloud-upload-alt"></i>
+                            <p>Arrastra archivos MP3 aquí o haz clic para seleccionar</p>
+                            <p class="file-limit">Máximo 20MB por archivo</p>
+                            <input type="file" id="fileInput" multiple accept=".mp3" style="display: none;">
+                        </div>
+                        <div class="upload-progress" id="uploadProgress" style="display: none;">
+                            <div class="progress-bar">
+                                <div class="progress-fill" id="progressFill"></div>
+                            </div>
+                            <div class="progress-text" id="progressText">0%</div>
+                        </div>
+                    </div>
+                    
+                    <div class="file-browser">
+                        <h4><i class="fas fa-folder"></i> Explorador de Archivos</h4>
+                        <div class="folder-tabs">
+                            <button class="tab-btn active" data-folder="variada">🎵 Variada</button>
+                            <button class="tab-btn" data-folder="jubilo">🎉 Júbilo</button>
+                            <button class="tab-btn" data-folder="adoracion">🙏 Adoración</button>
+                            <button class="tab-btn" data-folder="rancheras">🤠 Rancheras</button>
+                            <button class="tab-btn" data-folder="huaynos">🎺 Huaynos</button>
+                            <button class="tab-btn" data-folder="actuales">🆕 Actuales</button>
+                        </div>
+                        <div class="file-list" id="fileList">
+                            <div class="loading-files">
+                                <i class="fas fa-spinner fa-spin"></i>
+                                Cargando archivos...
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Programming Schedule -->
+            <section class="schedule-section">
+                <h3><i class="fas fa-calendar-alt"></i> Programación Horaria</h3>
+                <div class="schedule-manager">
+                    <div class="schedule-controls">
+                        <button class="schedule-btn" onclick="addScheduleItem()">
+                            <i class="fas fa-plus"></i>
+                            Nueva Programación
+                        </button>
+                        <button class="schedule-btn" onclick="saveSchedule()">
+                            <i class="fas fa-save"></i>
+                            Guardar Cambios
+                        </button>
+                        <button class="schedule-btn" onclick="resetSchedule()">
+                            <i class="fas fa-undo"></i>
+                            Restaurar
+                        </button>
+                    </div>
+                    <div class="schedule-grid" id="scheduleGrid">
+                        <!-- Schedule items will be populated by JavaScript -->
+                    </div>
+                </div>
+            </section>
+
+            <!-- User Management -->
+            <section class="user-management-section">
+                <h3><i class="fas fa-users-cog"></i> Gestión de Usuarios</h3>
+                <div class="user-manager">
+                    <div class="user-controls">
+                        <button class="user-btn" onclick="addUser()">
+                            <i class="fas fa-user-plus"></i>
+                            Agregar DJ
+                        </button>
+                        <button class="user-btn" onclick="changePasswords()">
+                            <i class="fas fa-key"></i>
+                            Cambiar Contraseñas
+                        </button>
+                    </div>
+                    <div class="user-list" id="userList">
+                        <div class="user-item">
+                            <div class="user-info">
+                                <i class="fas fa-headphones"></i>
+                                <span>DJ Principal</span>
+                            </div>
+                            <div class="user-status online">
+                                <span>Online</span>
+                            </div>
+                            <div class="user-actions">
+                                <button onclick="editUser('dj1')"><i class="fas fa-edit"></i></button>
+                                <button onclick="removeUser('dj1')"><i class="fas fa-trash"></i></button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- System Logs -->
+            <section class="logs-section">
+                <h3><i class="fas fa-list-alt"></i> Logs del Sistema</h3>
+                <div class="logs-container">
+                    <div class="logs-controls">
+                        <button class="logs-btn" onclick="refreshLogs()">
+                            <i class="fas fa-sync-alt"></i>
+                            Actualizar
+                        </button>
+                        <button class="logs-btn" onclick="clearLogs()">
+                            <i class="fas fa-trash-alt"></i>
+                            Limpiar
+                        </button>
+                        <select id="logLevel">
+                            <option value="all">Todos los niveles</option>
+                            <option value="info">Info</option>
+                            <option value="warning">Advertencias</option>
+                            <option value="error">Errores</option>
+                        </select>
+                    </div>
+                    <div class="logs-display" id="logsDisplay">
+                        <div class="log-entry info">
+                            <span class="log-time">08:22:15</span>
+                            <span class="log-level">INFO</span>
+                            <span class="log-message">Sistema iniciado correctamente</span>
+                        </div>
+                        <div class="log-entry success">
+                            <span class="log-time">08:22:16</span>
+                            <span class="log-level">SUCCESS</span>
+                            <span class="log-message">Conexión establecida con el servidor de streaming</span>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- System Controls -->
+            <section class="system-controls-section">
+                <h3><i class="fas fa-cogs"></i> Control del Sistema</h3>
+                <div class="system-controls-grid">
+                    <div class="control-group">
+                        <h4>Servidor de Audio</h4>
+                        <div class="control-buttons">
+                            <button class="control-btn success" onclick="startAudioServer()">
+                                <i class="fas fa-play"></i>
+                                Iniciar
+                            </button>
+                            <button class="control-btn warning" onclick="restartAudioServer()">
+                                <i class="fas fa-sync"></i>
+                                Reiniciar
+                            </button>
+                            <button class="control-btn danger" onclick="stopAudioServer()">
+                                <i class="fas fa-stop"></i>
+                                Detener
+                            </button>
+                        </div>
+                    </div>
+                    <div class="control-group">
+                        <h4>Base de Datos</h4>
+                        <div class="control-buttons">
+                            <button class="control-btn" onclick="backupDatabase()">
+                                <i class="fas fa-download"></i>
+                                Backup
+                            </button>
+                            <button class="control-btn" onclick="restoreDatabase()">
+                                <i class="fas fa-upload"></i>
+                                Restaurar
+                            </button>
+                            <button class="control-btn warning" onclick="optimizeDatabase()">
+                                <i class="fas fa-database"></i>
+                                Optimizar
+                            </button>
+                        </div>
+                    </div>
+                    <div class="control-group">
+                        <h4>Configuración</h4>
+                        <div class="control-buttons">
+                            <button class="control-btn" onclick="exportConfig()">
+                                <i class="fas fa-file-export"></i>
+                                Exportar
+                            </button>
+                            <button class="control-btn" onclick="importConfig()">
+                                <i class="fas fa-file-import"></i>
+                                Importar
+                            </button>
+                            <button class="control-btn danger" onclick="resetConfig()">
+                                <i class="fas fa-exclamation-triangle"></i>
+                                Reset
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Advanced Statistics -->
+            <section class="advanced-stats-section">
+                <h3><i class="fas fa-chart-line"></i> Estadísticas Avanzadas</h3>
+                <div class="stats-grid">
+                    <div class="stat-chart">
+                        <h4>Oyentes por Hora</h4>
+                        <canvas id="listenersChart" width="400" height="200"></canvas>
+                    </div>
+                    <div class="stat-chart">
+                        <h4>Pistas Más Reproducidas</h4>
+                        <div class="top-tracks" id="topTracks">
+                            <div class="track-stat">
+                                <span class="track-position">1</span>
+                                <span class="track-name">Amazing Grace</span>
+                                <span class="track-plays">45 plays</span>
+                            </div>
+                            <div class="track-stat">
+                                <span class="track-position">2</span>
+                                <span class="track-name">How Great Thou Art</span>
+                                <span class="track-plays">38 plays</span>
+                            </div>
+                            <div class="track-stat">
+                                <span class="track-position">3</span>
+                                <span class="track-name">Blessed Assurance</span>
+                                <span class="track-plays">32 plays</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+        </main>
+    </div>
+
+    <!-- Modals -->
+    <div class="modal" id="scheduleModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>Programación Horaria</h3>
+                <span class="close" onclick="closeModal('scheduleModal')">&times;</span>
+            </div>
+            <div class="modal-body">
+                <form id="scheduleForm">
+                    <div class="form-group">
+                        <label for="scheduleTime">Hora:</label>
+                        <input type="time" id="scheduleTime" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="scheduleType">Tipo:</label>
+                        <select id="scheduleType" required>
+                            <option value="">Seleccionar tipo...</option>
+                            <option value="himno">Himno Nacional</option>
+                            <option value="folder">Carpeta Específica</option>
+                            <option value="track">Pista Específica</option>
+                        </select>
+                    </div>
+                    <div class="form-group" id="folderGroup" style="display: none;">
+                        <label for="scheduleFolder">Carpeta:</label>
+                        <select id="scheduleFolder">
+                            <option value="variada">Música Variada</option>
+                            <option value="jubilo">Júbilo</option>
+                            <option value="adoracion">Adoración</option>
+                            <option value="rancheras">Rancheras</option>
+                            <option value="huaynos">Huaynos</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="scheduleDays">Días:</label>
+                        <div class="days-selector">
+                            <label><input type="checkbox" value="1"> Lunes</label>
+                            <label><input type="checkbox" value="2"> Martes</label>
+                            <label><input type="checkbox" value="3"> Miércoles</label>
+                            <label><input type="checkbox" value="4"> Jueves</label>
+                            <label><input type="checkbox" value="5"> Viernes</label>
+                            <label><input type="checkbox" value="6"> Sábado</label>
+                            <label><input type="checkbox" value="0"> Domingo</label>
+                        </div>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button class="modal-btn" onclick="closeModal('scheduleModal')">Cancelar</button>
+                <button class="modal-btn primary" onclick="saveScheduleItem()">Guardar</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="js/admin.js"></script>
+</body>
+</html>
