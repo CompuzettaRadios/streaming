@@ -16,6 +16,7 @@ class CompuzettaAdmin {
         this.logs = [];
         this.files = {};
         this.currentFolder = 'variada';
+        this.currentEditingSchedule = null;
         
         this.init();
     }
@@ -31,25 +32,34 @@ class CompuzettaAdmin {
     checkAuthentication() {
         const savedAuth = localStorage.getItem('admin_auth');
         if (savedAuth) {
-            const authData = JSON.parse(savedAuth);
-            if (Date.now() - authData.timestamp < 8 * 60 * 60 * 1000) { // 8 horas
-                this.isAuthenticated = true;
-                this.currentUser = authData.user;
-                this.showAdminPanel();
-                return;
+            try {
+                const authData = JSON.parse(savedAuth);
+                if (Date.now() - authData.timestamp < 8 * 60 * 60 * 1000) { // 8 horas
+                    this.isAuthenticated = true;
+                    this.currentUser = authData.user;
+                    this.showAdminPanel();
+                    return;
+                }
+            } catch (e) {
+                localStorage.removeItem('admin_auth');
             }
         }
         this.showLoginOverlay();
     }
 
     showLoginOverlay() {
-        document.getElementById('loginOverlay').style.display = 'flex';
-        document.getElementById('adminPanel').style.display = 'none';
+        const loginOverlay = document.getElementById('loginOverlay');
+        const adminPanel = document.getElementById('adminPanel');
+        if (loginOverlay) loginOverlay.style.display = 'flex';
+        if (adminPanel) adminPanel.style.display = 'none';
     }
 
     showAdminPanel() {
-        document.getElementById('loginOverlay').style.display = 'none';
-        document.getElementById('adminPanel').style.display = 'block';
+        const loginOverlay = document.getElementById('loginOverlay');
+        const adminPanel = document.getElementById('adminPanel');
+        if (loginOverlay) loginOverlay.style.display = 'none';
+        if (adminPanel) adminPanel.style.display = 'block';
+        
         this.updateDashboard();
         this.loadFileManager();
         this.loadSchedule();
@@ -58,20 +68,25 @@ class CompuzettaAdmin {
     }
 
     async authenticateAdmin(password) {
-        // Simulación de autenticación - En producción usar backend seguro
+        // Contraseñas de administrador
         const validPasswords = {
             'admin123': { role: 'admin', name: 'Administrador Principal' },
-            'compuzetta2024': { role: 'admin', name: 'Admin Compuzetta' }
+            'compuzetta2024': { role: 'admin', name: 'Admin Compuzetta' },
+            'radio123': { role: 'admin', name: 'Admin Radio' }
         };
 
         if (validPasswords[password]) {
             this.isAuthenticated = true;
             this.currentUser = validPasswords[password];
             
-            localStorage.setItem('admin_auth', JSON.stringify({
-                user: this.currentUser,
-                timestamp: Date.now()
-            }));
+            try {
+                localStorage.setItem('admin_auth', JSON.stringify({
+                    user: this.currentUser,
+                    timestamp: Date.now()
+                }));
+            } catch (e) {
+                console.warn('No se pudo guardar la sesión');
+            }
             
             this.showAdminPanel();
             this.addLog('success', 'Administrador autenticado correctamente');
@@ -83,7 +98,11 @@ class CompuzettaAdmin {
     }
 
     logout() {
-        localStorage.removeItem('admin_auth');
+        try {
+            localStorage.removeItem('admin_auth');
+        } catch (e) {
+            console.warn('No se pudo limpiar la sesión');
+        }
         this.isAuthenticated = false;
         this.currentUser = null;
         this.showLoginOverlay();
@@ -93,16 +112,22 @@ class CompuzettaAdmin {
     // ========== EVENT LISTENERS ==========
     setupEventListeners() {
         // Login form
-        document.getElementById('loginForm').addEventListener('submit', async (e) => {
-            e.preventDefault();
-            const password = document.getElementById('passwordInput').value;
-            const success = await this.authenticateAdmin(password);
-            
-            if (!success) {
-                this.showError('Contraseña incorrecta');
-                document.getElementById('passwordInput').value = '';
-            }
-        });
+        const loginForm = document.getElementById('loginForm');
+        if (loginForm) {
+            loginForm.addEventListener('submit', async (e) => {
+                e.preventDefault();
+                const passwordInput = document.getElementById('passwordInput');
+                const password = passwordInput ? passwordInput.value : '';
+                const success = await this.authenticateAdmin(password);
+                
+                if (!success) {
+                    this.showError('Contraseña incorrecta');
+                    if (passwordInput) passwordInput.value = '';
+                } else {
+                    this.showSuccess('Acceso concedido');
+                }
+            });
+        }
 
         // File upload
         this.setupFileUpload();
@@ -110,7 +135,8 @@ class CompuzettaAdmin {
         // Folder tabs
         document.querySelectorAll('.tab-btn').forEach(btn => {
             btn.addEventListener('click', (e) => {
-                this.switchFolder(e.target.dataset.folder);
+                const folder = e.target.dataset.folder;
+                if (folder) this.switchFolder(folder);
             });
         });
 
@@ -118,37 +144,52 @@ class CompuzettaAdmin {
         this.setupModals();
 
         // Schedule controls
-        document.getElementById('scheduleType').addEventListener('change', (e) => {
-            const folderGroup = document.getElementById('folderGroup');
-            folderGroup.style.display = e.target.value === 'folder' ? 'block' : 'none';
-        });
+        const scheduleType = document.getElementById('scheduleType');
+        if (scheduleType) {
+            scheduleType.addEventListener('change', (e) => {
+                const folderGroup = document.getElementById('folderGroup');
+                if (folderGroup) {
+                    folderGroup.style.display = e.target.value === 'folder' ? 'block' : 'none';
+                }
+            });
+        }
+
+        // Log level filter
+        const logLevel = document.getElementById('logLevel');
+        if (logLevel) {
+            logLevel.addEventListener('change', () => {
+                this.renderLogs();
+            });
+        }
     }
 
     setupFileUpload() {
         const dropZone = document.getElementById('dropZone');
         const fileInput = document.getElementById('fileInput');
 
-        dropZone.addEventListener('click', () => fileInput.click());
-        
-        dropZone.addEventListener('dragover', (e) => {
-            e.preventDefault();
-            dropZone.classList.add('dragover');
-        });
+        if (dropZone && fileInput) {
+            dropZone.addEventListener('click', () => fileInput.click());
+            
+            dropZone.addEventListener('dragover', (e) => {
+                e.preventDefault();
+                dropZone.classList.add('dragover');
+            });
 
-        dropZone.addEventListener('dragleave', () => {
-            dropZone.classList.remove('dragover');
-        });
+            dropZone.addEventListener('dragleave', () => {
+                dropZone.classList.remove('dragover');
+            });
 
-        dropZone.addEventListener('drop', (e) => {
-            e.preventDefault();
-            dropZone.classList.remove('dragover');
-            const files = e.dataTransfer.files;
-            this.handleFileUpload(files);
-        });
+            dropZone.addEventListener('drop', (e) => {
+                e.preventDefault();
+                dropZone.classList.remove('dragover');
+                const files = e.dataTransfer.files;
+                this.handleFileUpload(files);
+            });
 
-        fileInput.addEventListener('change', (e) => {
-            this.handleFileUpload(e.target.files);
-        });
+            fileInput.addEventListener('change', (e) => {
+                this.handleFileUpload(e.target.files);
+            });
+        }
     }
 
     setupModals() {
@@ -165,21 +206,36 @@ class CompuzettaAdmin {
         // Simular datos en tiempo real
         this.systemStatus = {
             online: true,
-            uptime: Math.floor(Math.random() * 86400), // Segundos aleatorios
+            uptime: Math.floor(Math.random() * 86400),
             listeners: Math.floor(Math.random() * 50) + 10,
             djOnline: Math.random() > 0.5
         };
 
-        document.getElementById('systemStatus').className = 
-            `status-dot ${this.systemStatus.online ? 'online' : 'offline'}`;
-        document.getElementById('systemStatusText').textContent = 
-            this.systemStatus.online ? 'Sistema Online' : 'Sistema Offline';
-        
-        document.getElementById('totalListeners').textContent = this.systemStatus.listeners;
-        document.getElementById('totalTracks').textContent = this.getTotalTracks();
-        document.getElementById('uptime').textContent = this.formatUptime(this.systemStatus.uptime);
-        document.getElementById('djStatus').textContent = 
-            this.systemStatus.djOnline ? 'En Línea' : 'Desconectado';
+        const statusDot = document.getElementById('systemStatus');
+        const statusText = document.getElementById('systemStatusText');
+        const totalListeners = document.getElementById('totalListeners');
+        const totalTracks = document.getElementById('totalTracks');
+        const uptime = document.getElementById('uptime');
+        const djStatus = document.getElementById('djStatus');
+
+        if (statusDot) {
+            statusDot.className = `status-dot ${this.systemStatus.online ? 'online' : 'offline'}`;
+        }
+        if (statusText) {
+            statusText.textContent = this.systemStatus.online ? 'Sistema Online' : 'Sistema Offline';
+        }
+        if (totalListeners) {
+            totalListeners.textContent = this.systemStatus.listeners;
+        }
+        if (totalTracks) {
+            totalTracks.textContent = this.getTotalTracks();
+        }
+        if (uptime) {
+            uptime.textContent = this.formatUptime(this.systemStatus.uptime);
+        }
+        if (djStatus) {
+            djStatus.textContent = this.systemStatus.djOnline ? 'En Línea' : 'Desconectado';
+        }
     }
 
     getTotalTracks() {
@@ -197,9 +253,11 @@ class CompuzettaAdmin {
         return `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
     }
 
-// ========== GESTIÓN DE ARCHIVOS ==========
+    // ========== GESTIÓN DE ARCHIVOS ==========
     async handleFileUpload(files) {
-        const folder = document.getElementById('uploadFolder').value;
+        const uploadFolder = document.getElementById('uploadFolder');
+        const folder = uploadFolder ? uploadFolder.value : '';
+        
         if (!folder) {
             this.showError('Selecciona una carpeta destino');
             return;
@@ -209,7 +267,7 @@ class CompuzettaAdmin {
         const progressFill = document.getElementById('progressFill');
         const progressText = document.getElementById('progressText');
 
-        progressContainer.style.display = 'block';
+        if (progressContainer) progressContainer.style.display = 'block';
 
         for (let i = 0; i < files.length; i++) {
             const file = files[i];
@@ -227,8 +285,8 @@ class CompuzettaAdmin {
 
             // Simular subida de archivo
             const progress = ((i + 1) / files.length) * 100;
-            progressFill.style.width = `${progress}%`;
-            progressText.textContent = `${Math.round(progress)}% - Subiendo ${file.name}`;
+            if (progressFill) progressFill.style.width = `${progress}%`;
+            if (progressText) progressText.textContent = `${Math.round(progress)}% - Subiendo ${file.name}`;
 
             // Simular delay de subida
             await new Promise(resolve => setTimeout(resolve, 1000));
@@ -242,16 +300,25 @@ class CompuzettaAdmin {
                 name: file.name,
                 size: file.size,
                 uploaded: new Date(),
-                duration: '00:00' // Se calcularía en implementación real
+                duration: this.calculateDuration(file.size)
             });
 
             this.addLog('success', `Archivo subido: ${file.name} a carpeta ${folder}`);
         }
 
-        progressContainer.style.display = 'none';
+        if (progressContainer) progressContainer.style.display = 'none';
         this.loadFileManager();
         this.updateDashboard();
         this.showSuccess(`${files.length} archivo(s) subido(s) correctamente`);
+    }
+
+    calculateDuration(fileSize) {
+        // Estimación basada en el tamaño del archivo (muy aproximado)
+        const averageBitrate = 128; // kbps
+        const durationSeconds = Math.floor(fileSize / (averageBitrate * 125));
+        const minutes = Math.floor(durationSeconds / 60);
+        const seconds = durationSeconds % 60;
+        return `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
     }
 
     loadFileManager() {
@@ -271,6 +338,8 @@ class CompuzettaAdmin {
 
         // Cargar archivos de la carpeta
         const fileList = document.getElementById('fileList');
+        if (!fileList) return;
+
         const files = this.files[folder] || [];
 
         if (files.length === 0) {
@@ -284,7 +353,7 @@ class CompuzettaAdmin {
             return;
         }
 
-        fileList.innerHTML = files.map(file => `
+        fileList.innerHTML = files.map((file, index) => `
             <div class="file-item">
                 <div class="file-info">
                     <i class="fas fa-music"></i>
@@ -302,7 +371,7 @@ class CompuzettaAdmin {
                     <button class="file-btn" onclick="admin.editFile('${file.name}')" title="Editar">
                         <i class="fas fa-edit"></i>
                     </button>
-                    <button class="file-btn danger" onclick="admin.deleteFile('${folder}', '${file.name}')" title="Eliminar">
+                    <button class="file-btn danger" onclick="admin.deleteFile('${folder}', ${index})" title="Eliminar">
                         <i class="fas fa-trash"></i>
                     </button>
                 </div>
@@ -318,17 +387,17 @@ class CompuzettaAdmin {
         return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
     }
 
-    deleteFile(folder, filename) {
+    deleteFile(folder, index) {
+        const folderFiles = this.files[folder];
+        if (!folderFiles || !folderFiles[index]) return;
+        
+        const filename = folderFiles[index].name;
         if (!confirm(`¿Eliminar "${filename}"?`)) return;
         
-        const folderFiles = this.files[folder];
-        const index = folderFiles.findIndex(f => f.name === filename);
-        if (index !== -1) {
-            folderFiles.splice(index, 1);
-            this.loadFileManager();
-            this.addLog('warning', `Archivo eliminado: ${filename}`);
-            this.showSuccess('Archivo eliminado correctamente');
-        }
+        folderFiles.splice(index, 1);
+        this.loadFileManager();
+        this.addLog('warning', `Archivo eliminado: ${filename}`);
+        this.showSuccess('Archivo eliminado correctamente');
     }
 
     playPreview(filename) {
@@ -379,6 +448,8 @@ class CompuzettaAdmin {
 
     renderSchedule() {
         const scheduleGrid = document.getElementById('scheduleGrid');
+        if (!scheduleGrid) return;
+
         const dayNames = ['Dom', 'Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb'];
         
         scheduleGrid.innerHTML = this.schedule.map(item => `
@@ -454,25 +525,30 @@ class CompuzettaAdmin {
 
     editScheduleItem(id) {
         const item = this.schedule.find(s => s.id === id);
-        if (item) {
-            // Llenar formulario modal
-            document.getElementById('scheduleTime').value = item.time;
-            document.getElementById('scheduleType').value = item.type;
-            
-            if (item.type === 'folder') {
-                document.getElementById('folderGroup').style.display = 'block';
-                document.getElementById('scheduleFolder').value = item.folder;
-            }
-            
-            // Marcar días
-            const dayInputs = document.querySelectorAll('#scheduleDays input');
-            dayInputs.forEach(input => {
-                input.checked = item.days.includes(parseInt(input.value));
-            });
-            
-            this.currentEditingSchedule = id;
-            this.showModal('scheduleModal');
+        if (!item) return;
+
+        // Llenar formulario modal
+        const timeInput = document.getElementById('scheduleTime');
+        const typeSelect = document.getElementById('scheduleType');
+        const folderSelect = document.getElementById('scheduleFolder');
+        const folderGroup = document.getElementById('folderGroup');
+
+        if (timeInput) timeInput.value = item.time;
+        if (typeSelect) typeSelect.value = item.type;
+        
+        if (item.type === 'folder' && folderGroup && folderSelect) {
+            folderGroup.style.display = 'block';
+            folderSelect.value = item.folder;
         }
+        
+        // Marcar días
+        const dayInputs = document.querySelectorAll('#scheduleDays input');
+        dayInputs.forEach(input => {
+            input.checked = item.days.includes(parseInt(input.value));
+        });
+        
+        this.currentEditingSchedule = id;
+        this.showModal('scheduleModal');
     }
 
     // ========== GESTIÓN DE USUARIOS ==========
@@ -494,6 +570,8 @@ class CompuzettaAdmin {
 
     renderUsers() {
         const userList = document.getElementById('userList');
+        if (!userList) return;
+
         userList.innerHTML = this.users.map(user => `
             <div class="user-item">
                 <div class="user-info">
@@ -534,10 +612,23 @@ class CompuzettaAdmin {
     loadLogs() {
         if (this.logs.length === 0) {
             this.addLog('info', 'Sistema iniciado correctamente');
-            this.addLog('success', 'Conexión establecida con servidor de streaming');
-            this.addLog('info', 'Carga de archivos de música completada');
+            this.addLog('success', 'Panel de administración cargado');
+            this.addLog('info', 'Carga de configuración completada');
         }
         this.renderLogs();
+    }
+
+    loadInitialData() {
+        // Cargar datos iniciales de ejemplo
+        this.files = {
+            variada: [
+                { name: 'Amazing_Grace.mp3', size: 4500000, duration: '04:32', uploaded: new Date() },
+                { name: 'How_Great_Thou_Art.mp3', size: 5200000, duration: '05:18', uploaded: new Date() }
+            ],
+            adoracion: [
+                { name: 'Worthy_Is_The_Lamb.mp3', size: 3800000, duration: '03:45', uploaded: new Date() }
+            ]
+        };
     }
 
     addLog(level, message) {
@@ -561,7 +652,11 @@ class CompuzettaAdmin {
 
     renderLogs() {
         const logsDisplay = document.getElementById('logsDisplay');
-        const selectedLevel = document.getElementById('logLevel').value;
+        const logLevel = document.getElementById('logLevel');
+        
+        if (!logsDisplay) return;
+
+        const selectedLevel = logLevel ? logLevel.value : 'all';
         
         let filteredLogs = this.logs;
         if (selectedLevel !== 'all') {
@@ -579,13 +674,15 @@ class CompuzettaAdmin {
 
     // ========== MONITOREO DEL SISTEMA ==========
     startSystemMonitoring() {
+        // Actualizar dashboard cada 5 segundos
         setInterval(() => {
             this.updateDashboard();
-        }, 5000); // Actualizar cada 5 segundos
+        }, 5000);
 
+        // Log aleatorio cada 30 segundos
         setInterval(() => {
             this.addRandomLog();
-        }, 30000); // Log aleatorio cada 30 segundos
+        }, 30000);
     }
 
     addRandomLog() {
@@ -593,7 +690,8 @@ class CompuzettaAdmin {
             { level: 'info', message: 'Estadísticas de oyentes actualizadas' },
             { level: 'info', message: 'Verificación de archivos completada' },
             { level: 'success', message: 'Nuevo oyente conectado' },
-            { level: 'info', message: 'Rotación automática de música activada' }
+            { level: 'info', message: 'Rotación automática de música activada' },
+            { level: 'info', message: 'Sistema funcionando correctamente' }
         ];
         
         const randomLog = randomLogs[Math.floor(Math.random() * randomLogs.length)];
@@ -602,11 +700,13 @@ class CompuzettaAdmin {
 
     // ========== MODALES ==========
     showModal(modalId) {
-        document.getElementById(modalId).style.display = 'flex';
+        const modal = document.getElementById(modalId);
+        if (modal) modal.style.display = 'flex';
     }
 
     closeModal(modalId) {
-        document.getElementById(modalId).style.display = 'none';
+        const modal = document.getElementById(modalId);
+        if (modal) modal.style.display = 'none';
         this.currentEditingSchedule = null;
     }
 
@@ -624,25 +724,48 @@ class CompuzettaAdmin {
     }
 
     showNotification(message, type) {
+        // Crear elemento de notificación
         const notification = document.createElement('div');
         notification.className = `notification ${type}`;
+        notification.style.cssText = `
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            padding: 15px 20px;
+            background: ${type === 'error' ? '#ff4757' : type === 'success' ? '#2ed573' : '#3742fa'};
+            color: white;
+            border-radius: 8px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+            z-index: 10000;
+            max-width: 300px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            animation: slideIn 0.3s ease;
+        `;
+        
+        const icon = type === 'error' ? 'exclamation-circle' : type === 'success' ? 'check-circle' : 'info-circle';
+        
         notification.innerHTML = `
-            <i class="fas fa-${type === 'error' ? 'exclamation-circle' : type === 'success' ? 'check-circle' : 'info-circle'}"></i>
+            <i class="fas fa-${icon}"></i>
             <span>${message}</span>
-            <button onclick="this.parentElement.remove()">
+            <button onclick="this.parentElement.remove()" style="background:none;border:none;color:white;cursor:pointer;margin-left:auto;">
                 <i class="fas fa-times"></i>
             </button>
         `;
         
         document.body.appendChild(notification);
         
+        // Auto-remover después de 5 segundos
         setTimeout(() => {
-            notification.remove();
+            if (notification.parentElement) {
+                notification.remove();
+            }
         }, 5000);
     }
 }
 
-// ========== FUNCIONES GLOBALES ==========
+// ========== INSTANCIA GLOBAL ==========
 let admin;
 
 // Inicializar cuando el DOM esté listo
@@ -650,21 +773,30 @@ document.addEventListener('DOMContentLoaded', () => {
     admin = new CompuzettaAdmin();
 });
 
-// Funciones accesibles globalmente
+// ========== FUNCIONES GLOBALES ==========
 function logout() {
-    admin.logout();
+    if (admin) admin.logout();
 }
 
 function addScheduleItem() {
-    admin.currentEditingSchedule = null;
-    document.getElementById('scheduleForm').reset();
-    admin.showModal('scheduleModal');
+    if (admin) {
+        admin.currentEditingSchedule = null;
+        const form = document.getElementById('scheduleForm');
+        if (form) form.reset();
+        admin.showModal('scheduleModal');
+    }
 }
 
 function saveScheduleItem() {
-    const time = document.getElementById('scheduleTime').value;
-    const type = document.getElementById('scheduleType').value;
-    const folder = document.getElementById('scheduleFolder').value;
+    if (!admin) return;
+
+    const timeInput = document.getElementById('scheduleTime');
+    const typeSelect = document.getElementById('scheduleType');
+    const folderSelect = document.getElementById('scheduleFolder');
+    
+    const time = timeInput ? timeInput.value : '';
+    const type = typeSelect ? typeSelect.value : '';
+    const folder = folderSelect ? folderSelect.value : '';
     
     const selectedDays = Array.from(document.querySelectorAll('#scheduleDays input:checked'))
         .map(input => parseInt(input.value));
@@ -686,8 +818,10 @@ function saveScheduleItem() {
     
     if (admin.currentEditingSchedule) {
         const index = admin.schedule.findIndex(s => s.id === admin.currentEditingSchedule);
-        admin.schedule[index] = scheduleItem;
-        admin.addLog('info', 'Programación actualizada');
+        if (index !== -1) {
+            admin.schedule[index] = scheduleItem;
+            admin.addLog('info', 'Programación actualizada');
+        }
     } else {
         admin.schedule.push(scheduleItem);
         admin.addLog('success', 'Nueva programación agregada');
@@ -699,7 +833,8 @@ function saveScheduleItem() {
 }
 
 function saveSchedule() {
-    admin.addLog('success', 'Configuración de programación guardada');
+    if (admin) {
+        admin.addLog('success', 'Configuración de programación guardada');
     admin.showSuccess('Programación guardada correctamente');
 }
 
